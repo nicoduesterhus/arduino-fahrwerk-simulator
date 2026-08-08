@@ -1,65 +1,104 @@
-# Fahrwerk Simulator & Entwicklungsprojekt
+# Fahrwerk-Simulator
 
-Dieses Repository dokumentiert den Aufbau eines intelligenten,
-regenerativen Fahrwerksystems — von ersten Arduino-Prototypen
-bis zum späteren physischen Demonstrator.
+Ein selbstgebauter Versuchsaufbau, der eine Fahrbahnanregung erzeugt, die Systemantwort misst und daraus den Fahrbahnzustand klassifiziert. Entstanden als Eigenprojekt neben dem Studium (Fahrzeugentwicklung B.Eng., TH Köln).
 
-## Vision
+<!-- Foto hier einfügen: ![Aufbau](docs/aufbau.jpg) -->
 
-Ziel ist die Entwicklung eines aktiven Fahrwerksystems das drei
-Dinge vereint die bisher niemand zusammen gelöst hat:
+---
 
-- **Prädiktive Sensorik** — erkennt Straßenunebenheiten bevor
-  das Rad drüber fährt
-- **KI-gestützte Regelung** — passt Dämpfung in Echtzeit
-  automatisch an die Situation an
-- **Energierekuperation** — gewinnt Energie aus jeder Dämpfung
-  zurück statt sie als Wärme zu verlieren
+## Worum es geht
 
-Und das zu einem Bruchteil der Kosten bestehender Systeme —
-damit nicht nur S-Klassen sondern alle Fahrzeuge davon profitieren.
-Langfristig auch für Züge, Flugzeuge und Weltraum-Rover.
+Ein Fahrwerk ist im Kern eine Regelstrecke: Ein Sensor misst eine Störgröße, ein Regler verarbeitet sie, ein Aktor reagiert. Ich wollte diese Kette einmal vollständig selbst aufbauen — vom Rohsignal bis zur ausgewerteten Messreihe — statt nur darüber zu lesen.
+
+Der Aufbau ist bewusst einfach gehalten. Es geht nicht um ein realistisches Fahrwerksmodell, sondern darum, die Signalkette zu verstehen und sauber zu implementieren.
+
+---
 
 ## Aktueller Stand
 
-### Fertig
-- HC-SR04 Ultraschallsensor + SG90 Servo Regelkreis
-- PID-Regler mit manuellem Tuning
-- Gleitender Mittelwert zur Signalglättung
-- Automatisches Daten-Logging (CSV)
-- Machine Learning Modell (Decision Tree, 88% Genauigkeit)
-  erkennt Fahrsituationen: glatt / welle / schlagloch
+**Phase 1 — abgeschlossen**
 
-### In Arbeit
-- Zweiter Sensor für prädiktive Vorausschau
-- DC-Motor als Generator für Rekuperation
-- Energiemessung mit INA219
+- Abstandsmessung mit Ultraschallsensor (HC-SR04)
+- Signalglättung über gleitenden Mittelwert
+- PID-Regler mit definierter Abtastzeit, Ansteuerung eines Servos (SG90)
+- Aufzeichnung der Messwerte als CSV über die serielle Schnittstelle
+- Auswertung in Python: Klassifikation des Fahrbahnzustands (glatt / Welle / Schlagloch) mit einem Entscheidungsbaum, **ca. 88 % Trefferquote** auf den Testdaten
 
-### Geplant
-- CAD Gehäuse (Fusion 360)
-- Physischer 1:5 Prototyp mit echter Feder
-- Raspberry Pi + Kamera für Bildverarbeitung
-- Vollständiger KI-gesteuerter Demonstrator
+**Phase 2 — in Arbeit**
 
-## Hardware
+Umbau zu einem Ein-Freiheitsgrad-Viertelfahrzeug-Aufbau:
 
-| Bauteil | Status |
-|---|---|
-| Elegoo Uno R3 | vorhanden |
-| HC-SR04 Ultraschallsensor | vorhanden |
-| SG90 Servo | vorhanden |
-| NEMA 17 Schrittmotor | vorhanden |
-| A4988 Motortreiber | bestellt |
-| 2x HC-SR04 (prädiktiv) | bestellt |
-| N20 DC-Motor (Generator) | bestellt |
-| INA219 Stromsensor | bestellt |
+- Wegmessung über Time-of-Flight-Sensoren (VL53L1X) statt Ultraschall
+- Beschleunigungsmessung am Aufbau (MPU-6050)
+- Basispunktanregung über Schrittmotor (NEMA 17, A4988)
+- Erfassung der rückgewonnenen elektrischen Leistung über einen rückgetriebenen DC-Motor (INA219)
 
-## Hintergrund
+---
 
-Ich studiere Fahrzeugentwicklung an der TH Köln (2. Semester)
-mit dem langfristigen Ziel eine eigene Firma zu gründen die
-intelligente regenerative Fahrwerksysteme entwickelt und baut.
+## Aufbau der Signalkette
 
-Dieses Projekt ist der erste praktische Schritt.
+```
+Sensor  →  Filterung  →  Regler  →  Aktor
+   ↓
+ Logging (CSV)  →  Auswertung (Python)  →  Klassifikation
+```
 
-Entwicklungsbeginn: Juni 2026
+---
+
+## Verwendete Hardware
+
+| Komponente | Typ | Funktion |
+|---|---|---|
+| Mikrocontroller | Arduino Uno R3 | Regelung, Datenerfassung |
+| Abstandssensor | HC-SR04 | Phase 1 |
+| Abstandssensor | VL53L1X (ToF) | Phase 2 |
+| Beschleunigungssensor | MPU-6050 | Phase 2 |
+| Aktor | SG90 Servo | Phase 1 |
+| Anregung | NEMA 17 + A4988 | Phase 2 |
+| Strommessung | INA219 | Phase 2 |
+
+---
+
+## Repository
+
+<!-- Diese Struktur an dein Repo anpassen -->
+
+```
+/arduino        Firmware (C++)
+/python         Auswertung und Klassifikation
+/data           Aufgezeichnete Messreihen (CSV)
+/docs           Fotos, Schaltplan, Notizen
+```
+
+---
+
+## Was ich dabei gelernt habe
+
+- **Abtastzeit ist keine Nebensache.** Ein PID-Regler ohne definierte Abtastzeit liefert je nach Schleifenlaufzeit unterschiedliche Ergebnisse. Das war der Punkt, an dem der erste Aufbau nicht reproduzierbar war.
+- **Filterung kostet Phase.** Ein gleitender Mittelwert glättet das Signal, verzögert es aber auch — und diese Verzögerung wirkt direkt im Regelkreis.
+- **Die Sensorwahl begrenzt das Messbare.** Der Ultraschallsensor ist für langsame Bewegungen ausreichend, für schnellere Vorgänge nicht. Das war der Grund für den Wechsel auf ToF-Sensorik.
+
+---
+
+## Grenzen des Aufbaus
+
+Der Aufbau ist ein Lernprojekt, kein Prüfstand im technischen Sinne:
+
+- Der Arduino Uno ist keine Echtzeitplattform. Die Schleifenlaufzeit schwankt, was die erreichbare Regelgüte begrenzt.
+- Die verwendeten Aktoren sind für dynamische Regelung im relevanten Frequenzbereich zu langsam.
+- Die Messwerte sind nicht kalibriert und daher nicht absolut belastbar.
+
+Diese Punkte sind bekannt und bewusst in Kauf genommen — es geht um die Methode, nicht um die absolute Genauigkeit.
+
+---
+
+## Nächste Schritte
+
+- Aufbau der Mechanik (Masse, Feder, Linearführung)
+- Auslegung von Eigenfrequenz und Anregungsbereich
+- Portierung auf eine echtzeitfähige Plattform (STM32 oder Teensy)
+- Erweiterung der Auswertung um Sprungantwort und Frequenzgang
+
+---
+
+**Nico Düsterhus** · Fahrzeugentwicklung B.Eng., TH Köln
