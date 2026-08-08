@@ -22,7 +22,7 @@ Der Aufbau ist bewusst einfach gehalten. Es geht nicht um ein realistisches Fahr
 - Signalglättung über gleitenden Mittelwert
 - PID-Regler mit definierter Abtastzeit, Ansteuerung eines Servos (SG90)
 - Aufzeichnung der Messwerte als CSV über die serielle Schnittstelle
-- Auswertung in Python: Klassifikation des Fahrbahnzustands (glatt / Welle / Schlagloch) mit einem Entscheidungsbaum, **ca. 88 % Trefferquote** auf den Testdaten
+- Auswertung in Python: Klassifikation des Fahrbahnzustands (glatt / Welle / Schlagloch) mit einem Entscheidungsbaum, **91,2 % Trefferquote** auf chronologisch getrennten Testdaten
 
 **Phase 2 — in Arbeit**
 
@@ -63,12 +63,10 @@ Sensor  →  Filterung  →  Regler  →  Aktor
 
 <!-- Diese Struktur an dein Repo anpassen -->
 
-```
-/arduino        Firmware (C++)
-/python         Auswertung und Klassifikation
-/data           Aufgezeichnete Messreihen (CSV)
-/docs           Fotos, Schaltplan, Notizen
-```
+src/fahrwerk_pid.ino     Arduino-Sketch (C++): Sensorauslesung, Filterung, PID-Regler
+fahrwerk_ml.py           Auswertung und Klassifikation (Python, scikit-learn)
+daten.csv                Aufgezeichnete Messreihe
+docs/                    Fotos und Notizen
 
 ---
 
@@ -77,6 +75,7 @@ Sensor  →  Filterung  →  Regler  →  Aktor
 - **Abtastzeit ist keine Nebensache.** Ein PID-Regler ohne definierte Abtastzeit liefert je nach Schleifenlaufzeit unterschiedliche Ergebnisse. Das war der Punkt, an dem der erste Aufbau nicht reproduzierbar war.
 - **Filterung kostet Phase.** Ein gleitender Mittelwert glättet das Signal, verzögert es aber auch — und diese Verzögerung wirkt direkt im Regelkreis.
 - **Die Sensorwahl begrenzt das Messbare.** Der Ultraschallsensor ist für langsame Bewegungen ausreichend, für schnellere Vorgänge nicht. Das war der Grund für den Wechsel auf ToF-Sensorik.
+- **Zufälliges Mischen verfälscht die Bewertung.** Bei Messreihen sind aufeinanderfolgende Samples stark korreliert. Ein zufälliger Train-Test-Split lässt das Modell Werte "sehen", die es schon kennt, und überschätzt die Genauigkeit. Ich trenne stattdessen chronologisch je Klasse.
 
 ---
 
