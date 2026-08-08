@@ -2,7 +2,7 @@
 
 Ein selbstgebauter Versuchsaufbau, der eine Fahrbahnanregung erzeugt, die Systemantwort misst und daraus den Fahrbahnzustand klassifiziert. Entstanden als Eigenprojekt neben dem Studium (Fahrzeugentwicklung B.Eng., TH Köln).
 
-<!-- Foto hier einfügen: ![Aufbau](docs/aufbau.jpg) -->
+![Aufbau](aufbau.jpg)
 
 ---
 
@@ -66,7 +66,7 @@ Sensor  →  Filterung  →  Regler  →  Aktor
 src/fahrwerk_pid.ino     Arduino-Sketch (C++): Sensorauslesung, Filterung, PID-Regler
 fahrwerk_ml.py           Auswertung und Klassifikation (Python, scikit-learn)
 daten.csv                Aufgezeichnete Messreihe
-docs/                    Fotos und Notizen
+aufbau.jpg               Foto des Versuchsaufbaus
 
 ---
 
